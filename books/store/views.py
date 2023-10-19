@@ -1,29 +1,29 @@
-from django.shortcuts import render
 from django.db.models import Count, Case, When, Avg
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.mixins import UpdateModelMixin
-from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
-from store.permissions import IsOwnerOrReadOnly
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.mixins import UpdateModelMixin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+
 from store.models import Book, UserBookRelation
+from store.permissions import IsOwnerOrStaffOrReadOnly
 from store.serializers import BooksSerializer, UserBookRelationSerializer
 
 class BookViewSet(ModelViewSet):
     queryset = Book.objects.all().annotate(
-            annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate')
+            annotated_likes=Count(Case(When(userbookrelation__like=True, then=1)))
         ).select_related('owner').prefetch_related('readers').order_by('id')
     serializer_class = BooksSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    permission_classes = [IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrStaffOrReadOnly]
     filterset_fields = ['price']
     search_fields = ['name', 'author_name']
     ordering_fields = ['price', 'author_name']
 
     def perform_create(self, serializer):
-        # serializer.validated_data['owner'] = self.request.user
-        serializer.save(owner=self.request.user)
+        serializer.validated_data['owner'] = self.request.user
+        serializer.save()
 
 class UserBooksRelationView(UpdateModelMixin, GenericViewSet):
     permission_classes = [IsAuthenticated]

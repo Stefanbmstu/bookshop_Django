@@ -24,8 +24,9 @@ class BookSerializerTestCase(TestCase):
                                         rate=5)
         UserBookRelation.objects.create(user=user2, book=book_1, like=True,
                                         rate=5)
-        UserBookRelation.objects.create(user=user3, book=book_1, like=True,
-                                        rate=4)
+        user_book_3 = UserBookRelation.objects.create(user=user3, book=book_1, like=True)
+        user_book_3.rate = 4
+        user_book_3.save()
 
         UserBookRelation.objects.create(user=user1, book=book_2, like=True,
                                         rate=5)
